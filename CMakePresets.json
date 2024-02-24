@@ -63,5 +63,24 @@
         "CMAKE_BUILD_TYPE": "Release"
       }
     }
+  ],
+  "buildPresets" : [
+    {
+      "name": "x64_Debug",
+      "configurePreset": "x64_Debug"
+    },
+    {
+      "name": "x64_Release",
+      "configurePreset": "x64_Release"
+    },
+    {
+      "name": "x64_Debug_xClangCl",
+      "configurePreset": "x64_Debug_xClangCl"
+    },
+    {
+      "name": "x64_Release_xClangCl",
+      "configurePreset": "x64_Release_xClangCl"
+    }
   ]
+
 }
