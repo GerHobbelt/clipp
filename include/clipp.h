@@ -45,6 +45,7 @@
 #include <utility>
 #include <iterator>
 #include <functional>
+#include <type_traits>
 
 #if __cplusplus >= 201703L
 #include <optional>
@@ -180,6 +181,113 @@ namespace traits {
  * @brief function (class) signature type trait
  *
  *****************************************************************************/
+
+/*
+ * Ripped (with minor modifications)
+ * from https://github.com/pfultz2/HIP/tree/d49d87d40b44cfa4fe13106891a6a048cb7921d7/include/hip/hcc_detail
+ */
+#if defined(__cpp_lib_is_invocable) && !defined(CLIPP_HAS_INVOCABLE)
+#   define CLIPP_HAS_INVOCABLE __cpp_lib_is_invocable
+#endif
+#if defined(__cpp_lib_result_of_sfinae) && !defined(CLIPP_HAS_RESULT_OF_SFINAE)
+#   define CLIPP_HAS_RESULT_OF_SFINAE __cpp_lib_result_of_sfinae
+#endif
+
+#ifndef CLIPP_HAS_INVOCABLE
+#define CLIPP_HAS_INVOCABLE 0
+#endif
+
+#ifndef CLIPP_HAS_RESULT_OF_SFINAE
+#define CLIPP_HAS_RESULT_OF_SFINAE 0
+#endif
+
+//namespace std {  // TODO: these should be removed as soon as possible.
+//#if (__cplusplus < 201406L)
+//#if (__cplusplus < 201402L)
+//template <bool cond, typename T = void>
+//using enable_if_t = typename enable_if<cond, T>::type;
+//template <bool cond, typename T, typename U>
+//using conditional_t = typename conditional<cond, T, U>::type;
+//template <typename T>
+//using decay_t = typename decay<T>::type;
+//template <FunctionalProcedure F, typename... Ts>
+//using result_of_t = typename result_of<F(Ts...)>::type;
+//template <typename T>
+//using remove_reference_t = typename remove_reference<T>::type;
+//#endif
+//#endif
+//}  // namespace std
+
+template <typename...>
+using void_t_ = void;
+
+template <typename F, typename... Ts>
+struct is_callable_impl;
+
+#if CLIPP_HAS_INVOCABLE
+template <typename F, typename... Ts>
+struct is_callable_impl<F(Ts...)> : std::is_invocable<F, Ts...> {};
+#elif CLIPP_HAS_RESULT_OF_SFINAE
+template <typename, typename = void>
+struct is_callable_impl : std::false_type {};
+
+template <FunctionalProcedure F, typename... Ts>
+struct is_callable_impl<F(Ts...), void_t_<typename std::result_of<F(Ts...)>::type > > : std::true_type {};
+#else
+template <class Base, class T, class Derived>
+auto simple_invoke(T Base::*pmd, Derived&& ref)
+-> decltype(static_cast<Derived&&>(ref).*pmd);
+
+template <class PMD, class Pointer>
+auto simple_invoke(PMD&& pmd, Pointer&& ptr)
+-> decltype((*static_cast<Pointer&&>(ptr)).*static_cast<PMD&&>(pmd));
+
+template <class Base, class T, class Derived>
+auto simple_invoke(T Base::*pmd, const std::reference_wrapper<Derived>& ref)
+-> decltype(ref.get().*pmd);
+
+template <class Base, class T, class Derived, class... Args>
+auto simple_invoke(T Base::*pmf, Derived&& ref, Args&&... args)
+-> decltype((static_cast<Derived&&>(ref).*pmf)(static_cast<Args&&>(args)...));
+
+template <class PMF, class Pointer, class... Args>
+auto simple_invoke(PMF&& pmf, Pointer&& ptr, Args&&... args)
+-> decltype(((*static_cast<Pointer&&>(ptr)).*static_cast<PMF&&>(pmf))(static_cast<Args&&>(args)...));
+
+template <class Base, class T, class Derived, class... Args>
+auto simple_invoke(T Base::*pmf, const std::reference_wrapper<Derived>& ref, Args&&... args)
+-> decltype((ref.get().*pmf)(static_cast<Args&&>(args)...));
+
+template<class F, class... Ts>
+auto simple_invoke(F&& f, Ts&&... xs)
+-> decltype(f(static_cast<Ts&&>(xs)...));
+
+template <typename, typename = void>
+struct is_callable_impl : std::false_type {};
+
+template <FunctionalProcedure F, typename... Ts>
+struct is_callable_impl<F(Ts...), void_t_<decltype(simple_invoke(std::declval<F>(), std::declval<Ts>()...))> >
+    : std::true_type {};
+
+#endif /* CLIPP_HAS_RESULT_OF_SFINAE */
+
+template <typename Call>
+struct is_invocable : is_callable_impl<Call> {};
+
+/** END of is_invocable */
+
+
+template <class Fn, class... Args>
+struct invoke_result {
+#if defined(__cpp_lib_is_invocable)
+#if !defined(_MSC_VER)
+    using type = typename std::invoke_result<Fn, Args...>::type; // First available in c++17.
+#endif
+#else
+    using type = typename std::result_of<Fn(Args...)>::type; // Deprecated in c++17; removed in c++20.
+#endif
+};
+
 template<class Fn, class Ret, class... Args>
 constexpr auto
 check_is_callable(int) -> decltype(
@@ -2251,9 +2359,12 @@ value(const doc_string& label, Targets&&... tgts)
         .required(true).blocking(true).repeatable(false);
 }
 
-template<class Filter, class... Targets, class = typename std::enable_if<
-    traits::is_callable<Filter,bool(const char*)>::value ||
-    traits::is_callable<Filter,subrange(const char*)>::value>::type>
+template<class Filter, class... Targets,
+    class = typename std::enable_if<traits::is_invocable<Filter(const char *)>::value>::type,
+    class = typename std::enable_if<
+    (traits::is_callable<Filter,bool(const char*)>::value ||
+    traits::is_callable<Filter,subrange(const char*)>::value)
+    >::type>
 inline parameter
 value(Filter&& filter, doc_string label, Targets&&... tgts)
 {
