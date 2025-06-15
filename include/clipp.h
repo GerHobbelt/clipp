@@ -47,7 +47,7 @@
 #include <functional>
 #include <type_traits>
 
-#if __cplusplus >= 201703L
+#if defined(__cpp_lib_optional)
 #include <optional>
 #endif
 
@@ -615,7 +615,7 @@ struct make<std::string> {
     }
 };
 
-#if __cplusplus >= 201703L
+#if defined(__cpp_lib_optional)
 template<class T>
 struct make<std::optional<T>> {
   static inline std::optional<T> from(const char* s) {
@@ -5372,7 +5372,7 @@ void execute_actions(const parsing_result& res)
             if(m.blocked())    param.notify_blocked(m.index());
             if(m.conflict())   param.notify_conflict(m.index());
             //main action
-			if (!m.any_error()) param.execute_actions(m.arg());
+            if(!m.any_error()) param.execute_actions(m.arg());
         }
     }
 
