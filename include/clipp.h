@@ -46,6 +46,10 @@
 #include <iterator>
 #include <functional>
 
+#if __cplusplus >= 201703L
+#include <optional>
+#endif
+
 
 /*************************************************************************//**
  *
@@ -501,7 +505,14 @@ struct make<std::string> {
     }
 };
 
-
+#if __cplusplus >= 201703L
+template<class T>
+struct make<std::optional<T>> {
+  static inline std::optional<T> from(const char* s) {
+    return std::make_optional<T>(make<T>::from(s));
+  }
+};
+#endif
 
 /*************************************************************************//**
  *
