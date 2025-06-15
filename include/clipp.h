@@ -355,7 +355,9 @@ struct limits_clamped {
 
 template<class T, class V>
 struct limits_clamped<T,V,false> {
-    static T from(const V& v) { return T(v); }
+    static T from(const V& v) {
+		return T(v);
+	}
 };
 
 
@@ -5248,7 +5250,7 @@ void execute_actions(const parsing_result& res)
             if(m.blocked())    param.notify_blocked(m.index());
             if(m.conflict())   param.notify_conflict(m.index());
             //main action
-            if(!m.any_error()) param.execute_actions(m.arg());
+			if (!m.any_error()) param.execute_actions(m.arg());
         }
     }
 
