@@ -28,6 +28,7 @@ int clipp_nested_alternatives_main(int argc, const char** argv);
 int clipp_numbers_main(int argc, const char** argv);
 int clipp_options_main(int argc, const char** argv);
 int clipp_options_values_main(int argc, const char** argv);
+int clipp_optionals_main(int argc, const char** argv);
 int clipp_parsing_main(int argc, const char** argv);
 int clipp_positional_values_main(int argc, const char** argv);
 int clipp_repeatable_main(int argc, const char** argv);
