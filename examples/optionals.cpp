@@ -26,17 +26,17 @@ int main(int argc, const char** argv)
     using namespace clipp;
     using std::cout;
 
-    int n = 0;
+    std::optional<int> n;
 	bool domerge = false;
-	long m = 5;
+	std::optional<long> m;
     auto print_ratio = [](const char* r) { cout << "using ratio of " << r << '\n'; };
 
 	std::vector<std::string> unrecognized;
 
 	auto cli = (
         (option("-n", "--count") & opt_value("count", n))           % "number of iterations",
-        (option("-r", "--ratio") & opt_value("ratio", print_ratio)) % "compression ratio",
-        (option("-m") & opt_value("lines=5", m).set(domerge))   % "merge lines (default: 5)",
+        (option("-r", "--ratio") & value("ratio", print_ratio))     % "compression ratio",
+        (option("-m") & opt_value("lines=5", m).set(domerge))       % "merge lines (default: 5)",
 		any_other(unrecognized)
 	);
 
@@ -45,10 +45,14 @@ int main(int argc, const char** argv)
 	debug::print(std::cout, res);
 
 	if (res && unrecognized.empty()) {
-        cout << "performing "  << n << " iterations\n";
-        if(domerge) cout << "merge " << m << " lines\n";
+		if (n.has_value())
+			cout << "performing " << n.value() << " iterations\n";
+		else
+			cout << "iteration count is default / unspecified\n";
+		if(domerge) cout << "merge " << m.value_or(0) << " lines\n";
     }
     else {
+		cout << "--------------------------------------------------------------------\n";
 		cout << "Wrong command line arguments!\n";
 		for (auto& a : unrecognized) {
 			cout << "Unrecognized arg: " << a << "\n";
