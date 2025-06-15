@@ -23,7 +23,8 @@
 
 int main(int argc, const char** argv)
 {
-    using namespace clipp;
+#if defined(__cpp_lib_optional)
+	using namespace clipp;
     using std::cout;
 
     std::optional<int> n;
@@ -49,7 +50,7 @@ int main(int argc, const char** argv)
 			cout << "performing " << n.value() << " iterations\n";
 		else
 			cout << "iteration count is default / unspecified\n";
-		if(domerge) cout << "merge " << m.value_or(0) << " lines\n";
+		if(domerge) cout << "merge " << m.value_or(5) /* apply default if not set */ << " lines\n";
     }
     else {
 		cout << "--------------------------------------------------------------------\n";
@@ -61,4 +62,8 @@ int main(int argc, const char** argv)
 		cout << make_man_page(cli, argv[0]) << '\n';
     }
 	return EXIT_SUCCESS;
+#else
+	std::cerr << "std::optional is not supported by your compiler/build.\n";
+	returtn EXIT_FAILURE;
+#endif
 }
