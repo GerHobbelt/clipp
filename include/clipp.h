@@ -294,7 +294,7 @@ check_is_callable(int) -> decltype(
     std::declval<Fn>()(std::declval<Args>()...),
 #if defined(__cpp_lib_is_invocable)
     std::integral_constant<bool,
-        std::is_same<Ret,typename std::invoke_result<Fn,Args...>::type>::value>{} );
+        std::is_same<Ret,typename std::invoke_result_t<Fn, Args...>>::value>{} );
 #else
     std::integral_constant<bool,
         std::is_same<Ret,typename std::result_of<Fn(Args...)>::type>::value>{} );
@@ -310,7 +310,7 @@ check_is_callable_without_arg(int) -> decltype(
     std::declval<Fn>()(),
 #if defined(__cpp_lib_is_invocable)
     std::integral_constant<bool,
-        std::is_same<Ret,typename std::invoke_result<Fn>::type>::value>{} );
+        std::is_same<Ret,typename std::invoke_result_t<Fn>>::value>{} );
 #else
     std::integral_constant<bool,
         std::is_same<Ret,typename std::result_of<Fn>::type>::value>{} );
